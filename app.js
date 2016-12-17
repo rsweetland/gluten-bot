@@ -5,9 +5,6 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var index = require('./routes/index');
-var users = require('./routes/users');
-
 var app = express();
 
 // view engine setup
@@ -22,8 +19,36 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', index);
-app.use('/users', users);
+var restify = require('restify');
+var builder = require('botbuilder');
+
+//=========================================================
+// Bot Setup
+//=========================================================
+
+// Setup Restify Server
+var server = restify.createServer();
+server.listen(process.env.port || process.env.PORT || 3978, function () {
+   console.log('%s listening to %s', server.name, server.url); 
+});
+  
+// Create chat bot
+var connector = new builder.ChatConnector({
+    appId: process.env.MICROSOFT_APP_ID,
+    appPassword: process.env.MICROSOFT_APP_PASSWORD
+});
+
+var bot = new builder.UniversalBot(connector);
+server.post('/api/messages', connector.listen());
+
+//=========================================================
+// Bots Dialogs
+//=========================================================
+
+bot.dialog('/', function (session) {
+    session.send("Hello World");
+});
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
